@@ -5628,6 +5628,69 @@ RETURNS TEXT AS $$
     );
 $$ LANGUAGE SQL;
 
+-- function_returns_types( schema, function, args[], types[], description )
+CREATE OR REPLACE FUNCTION function_returns_types( NAME, NAME, NAME[], NAME[], TEXT )
+RETURNS TEXT AS $$
+    SELECT _func_compare($1, $2, $3, _returns_types($1, $2, $3), $4, $5 );
+$$ LANGUAGE SQL;
+
+-- function_returns_types( schema, function, args[], types[] )
+CREATE OR REPLACE FUNCTION function_returns_types( NAME, NAME, NAME[], TEXT )
+RETURNS TEXT AS $$
+    SELECT function_returns_types(
+        $1, $2, $3, $4,
+        'Function ' || quote_ident($1) || '.' || quote_ident($2) || '(' ||
+        array_to_string($3, ', ') || ') should return ' || array_to_string($4, ',')
+    );
+$$ LANGUAGE SQL;
+
+-- function_returns_types( schema, function, types[], description )
+CREATE OR REPLACE FUNCTION function_returns_types( NAME, NAME, NAME[], TEXT )
+RETURNS TEXT AS $$
+    SELECT _func_compare($1, $2, _returns_types($1, $2), $3, $4 );
+$$ LANGUAGE SQL;
+
+-- function_returns_types( schema, function, types[] )
+CREATE OR REPLACE FUNCTION function_returns_types( NAME, NAME, NAME[] )
+RETURNS TEXT AS $$
+    SELECT function_returns_types(
+        $1, $2, $3,
+        'Function ' || quote_ident($1) || '.' || quote_ident($2)
+        || '() should return ' || array_to_string($3, ',')
+    );
+$$ LANGUAGE SQL;
+
+-- function_returns_types( function, args[], types[], description )
+CREATE OR REPLACE FUNCTION function_returns_types( NAME, NAME[], NAME[], TEXT )
+RETURNS TEXT AS $$
+    SELECT _func_compare(NULL, $1, $2, _returns($1, $2), $3, $4 );
+$$ LANGUAGE SQL;
+
+-- function_returns_types( function, args[], types[] )
+CREATE OR REPLACE FUNCTION function_returns_types( NAME, NAME[], NAME[] )
+RETURNS TEXT AS $$
+    SELECT function_returns_types(
+        $1, $2, $3,
+        'Function ' || quote_ident($1) || '(' ||
+        array_to_string($2, ', ') || ') should return ' || array_to_string($3, ',')
+    );
+$$ LANGUAGE SQL;
+
+-- function_returns_types( function, types[], description )
+CREATE OR REPLACE FUNCTION function_returns_types( NAME, NAME[], TEXT )
+RETURNS TEXT AS $$
+    SELECT _func_compare(NULL, $1, _returns_types($1), $2, $3 );
+$$ LANGUAGE SQL;
+
+-- function_returns_types( function, types[] )
+CREATE OR REPLACE FUNCTION function_returns_types( NAME, NAME[] )
+RETURNS TEXT AS $$
+    SELECT function_returns_types(
+        $1, $2,
+        'Function ' || quote_ident($1) || '() should return ' || array_to_string($2, ',')
+    );
+$$ LANGUAGE SQL;
+
 CREATE OR REPLACE FUNCTION _definer ( NAME, NAME, NAME[] )
 RETURNS BOOLEAN AS $$
     SELECT is_definer
