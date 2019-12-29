@@ -5537,6 +5537,34 @@ RETURNS TEXT AS $$
     SELECT returns FROM tap_funky WHERE name = $1 AND is_visible;
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION _returns_types ( NAME, NAME, NAME[] )
+RETURNS NAME[] AS $$
+    SELECT return_arg_types
+      FROM tap_funky
+     WHERE schema = $1
+       AND name   = $2
+       AND arg_types   = $3
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION _returns_types ( NAME, NAME )
+RETURNS NAME[] AS $$
+    SELECT return_arg_types FROM tap_funky WHERE schema = $1 AND name = $2
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION _returns_types ( NAME, NAME[] )
+RETURNS NAME[] AS $$
+    SELECT return_arg_types
+      FROM tap_funky
+     WHERE name = $1
+       AND arg_types = $2
+       AND is_visible;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION _returns_types ( NAME )
+RETURNS NAME[] AS $$
+    SELECT return_arg_types FROM tap_funky WHERE name = $1 AND is_visible;
+$$ LANGUAGE SQL;
+
 -- function_returns( schema, function, args[], type, description )
 CREATE OR REPLACE FUNCTION function_returns( NAME, NAME, NAME[], TEXT, TEXT )
 RETURNS TEXT AS $$
