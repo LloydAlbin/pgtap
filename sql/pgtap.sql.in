@@ -2513,9 +2513,9 @@ $$ LANGUAGE plpgsql STABLE;
 
 CREATE OR REPLACE VIEW tap_funky
  AS SELECT p.oid         AS oid,
-           n.nspname     AS schema,
+           p.pronamespace::regnamespace::name AS schema,
            p.proname     AS name,
-           pg_catalog.pg_get_userbyid(p.proowner) AS owner,
+           p.proowner::regrole::name AS owner,
            array_to_string(p.proargtypes::regtype[], ',') AS args,
            CASE p.proretset WHEN TRUE THEN 'setof ' ELSE '' END
              || p.prorettype::regtype AS returns,
@@ -2525,9 +2525,63 @@ CREATE OR REPLACE VIEW tap_funky
            p.prosecdef   AS is_definer,
            p.proretset   AS returns_set,
            p.provolatile::char AS volatility,
-           pg_catalog.pg_function_is_visible(p.oid) AS is_visible
+           pg_catalog.pg_function_is_visible(p.oid) AS is_visible,
+           COALESCE(pro_in.arg_types,ARRAY[NULL::NAME]) AS arg_types,
+           COALESCE(pro_in.arg_names,ARRAY[NULL::NAME]) AS arg_names,
+           COALESCE(pro_out.arg_types,ARRAY[NULL::NAME]) AS return_arg_types,
+           COALESCE(pro_out.arg_names,ARRAY[NULL::NAME]) AS return_arg_names
       FROM pg_catalog.pg_proc p
-      JOIN pg_catalog.pg_namespace n ON p.pronamespace = n.oid
+  LEFT JOIN (SELECT oid, array_agg(proallargtype ORDER BY nr) AS arg_types, array_agg(proargname ORDER BY nr) AS arg_names FROM (
+SELECT 
+    p.oid,
+    unnest(
+    	CASE WHEN p.proallargtypes IS NULL 
+        THEN array_remove( array_cat( ARRAY['']::name[], p.proargtypes::regtype [ ]::name[]), '') 
+        ELSE  p.proallargtypes::regtype [ ]::NAME[] 
+        END)::name AS proallargtype,
+    unnest(p.proargmodes) AS proargmode,
+    unnest(p.proargnames) AS proargname,
+    generate_subscripts(CASE WHEN p.proallargtypes IS NULL 
+        THEN array_remove( array_cat( ARRAY['']::name[], p.proargtypes::regtype [ ]::name[]), '') 
+        ELSE  p.proallargtypes::regtype [ ]::NAME[] 
+        END,1) AS nr
+FROM pg_catalog.pg_proc p
+) a
+WHERE proargmode IN ('i', 'b', 'v') OR proargmode IS NULL
+GROUP BY oid) pro_in ON (p.oid = pro_in.oid)
+LEFT JOIN (SELECT oid, array_agg(proallargtype ORDER BY nr) AS arg_types, array_agg(proargname ORDER BY nr) AS arg_names FROM (
+SELECT 
+    p.oid,
+    unnest(
+    	CASE WHEN p.proallargtypes IS NULL AND t.typtype != 'c'
+        THEN ARRAY[p.prorettype::regtype]::name[] 
+    	WHEN p.proallargtypes IS NULL AND t.typtype = 'c'
+        THEN ts.coltypes 
+        ELSE  p.proallargtypes::regtype [ ]::NAME[] 
+        END)::name AS proallargtype,
+    unnest(p.proargmodes) AS proargmode,
+    unnest(CASE WHEN p.proargmodes IS NULL AND t.typtype != 'c'
+    	THEN NULL 
+        WHEN p.proargmodes IS NULL AND t.typtype = 'c' 
+    	THEN ts.colnames 
+        ELSE p.proargnames END) AS proargname,
+    generate_subscripts(CASE WHEN p.proallargtypes IS NULL AND t.typtype != 'c'
+        THEN ARRAY[p.prorettype::regtype]::name[] 
+    	WHEN p.proallargtypes IS NULL AND t.typtype = 'c'
+        THEN ts.coltypes 
+        ELSE  p.proallargtypes::regtype [ ]::NAME[] 
+        END,1) AS nr
+FROM pg_catalog.pg_proc p
+LEFT JOIN pg_catalog.pg_type t ON p.prorettype = t.oid
+LEFT JOIN (SELECT c.oid, array_agg(a.attname ORDER BY a.attnum) AS colnames, 
+array_agg(a.atttypid::regtype::name ORDER BY a.attnum) AS coltypes
+FROM pg_catalog.pg_class c
+LEFT JOIN pg_catalog.pg_attribute a ON c.oid = a.attrelid
+WHERE a.attnum > 0
+GROUP BY c.oid) ts ON ts.oid = t.typrelid
+) a
+WHERE proargmode IN ('o', 'b', 't') OR proargmode IS NULL
+GROUP BY oid) pro_out ON (p.oid = pro_out.oid)
 ;
 
 CREATE OR REPLACE FUNCTION _funkargs ( NAME[] )
