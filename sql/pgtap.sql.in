@@ -2527,9 +2527,9 @@ CREATE OR REPLACE VIEW tap_funky
            p.provolatile::char AS volatility,
            pg_catalog.pg_function_is_visible(p.oid) AS is_visible,
            COALESCE(pro_in.arg_types,ARRAY[NULL::NAME]) AS arg_types,
-           COALESCE(pro_in.arg_names,ARRAY[NULL::NAME]) AS arg_names,
+           COALESCE(pro_in.arg_names,ARRAY[NULL::NAME])::NAME[] AS arg_names,
            COALESCE(pro_out.arg_types,ARRAY[NULL::NAME]) AS return_arg_types,
-           COALESCE(pro_out.arg_names,ARRAY[NULL::NAME]) AS return_arg_names
+           COALESCE(pro_out.arg_names,ARRAY[NULL::NAME])::NAME[] AS return_arg_names
       FROM pg_catalog.pg_proc p
   LEFT JOIN (SELECT oid, array_agg(proallargtype ORDER BY nr) AS arg_types, array_agg(proargname ORDER BY nr) AS arg_names FROM (
 SELECT 
