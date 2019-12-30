@@ -1326,6 +1326,54 @@ RETURNS TEXT AS $$
     SELECT hasnt_column( $1, $2, 'Column ' || quote_ident($1) || '.' || quote_ident($2) || ' should not exist' );
 $$ LANGUAGE SQL;
 
+-- function_has_column( schema, table, args[], column, description )
+CREATE OR REPLACE FUNCTION function_has_column ( NAME, NAME, NAME[], NAME, TEXT )
+RETURNS TEXT AS $$
+    SELECT ok( _fcexists( $1, $2, $3, $4 ), $5 );
+$$ LANGUAGE SQL;
+
+-- function_has_column( schema, table, args[], column )
+CREATE OR REPLACE FUNCTION function_has_column ( NAME, NAME, NAME[], NAME )
+RETURNS TEXT AS $$
+    SELECT function_has_column( $1, $2, $3, $4, 'Function Column ' || quote_ident($1) || '.' || quote_ident($1) || '(' || array_to_string($3, ',') || ').' || quote_ident($4) || ' should exist' );
+$$ LANGUAGE SQL;
+
+-- function_has_column( table, args[], column, description )
+CREATE OR REPLACE FUNCTION function_has_column ( NAME, NAME[], NAME, TEXT )
+RETURNS TEXT AS $$
+    SELECT ok( _fcexists( $1, $2, $3 ), $4 );
+$$ LANGUAGE SQL;
+
+-- function_has_column( table, args[], column )
+CREATE OR REPLACE FUNCTION function_has_column ( NAME, NAME[], NAME )
+RETURNS TEXT AS $$
+    SELECT function_has_column( $1, $2, $3, 'Function Column ' || quote_ident($1) || '(' || array_to_string($2, ',') || ').' || quote_ident($3) || ' should exist' );
+$$ LANGUAGE SQL;
+
+-- function_hasnt_column( schema, table, args[], column, description )
+CREATE OR REPLACE FUNCTION function_hasnt_column ( NAME, NAME, NAME[], NAME, TEXT )
+RETURNS TEXT AS $$
+    SELECT ok( NOT _fcexists( $1, $2, $3, $4 ), $5 );
+$$ LANGUAGE SQL;
+
+-- function_hasnt_column( schema, table, args[], column )
+CREATE OR REPLACE FUNCTION function_hasnt_column ( NAME, NAME, NAME[], NAME )
+RETURNS TEXT AS $$
+    SELECT function_hasnt_column( $1, $2, $3, $4, 'Function Column ' || quote_ident($1) || '.' || quote_ident($2) || '(' || array_to_string($3, ',') || ').' || quote_ident($4) || ' should not exist' );
+$$ LANGUAGE SQL;
+
+-- function_hasnt_column( table, args[], column, description )
+CREATE OR REPLACE FUNCTION function_hasnt_column ( NAME, NAME[], NAME, TEXT )
+RETURNS TEXT AS $$
+    SELECT ok( NOT _fcexists( $1, $2, $3 ), $4 );
+$$ LANGUAGE SQL;
+
+-- function_hasnt_column( table, args[], column )
+CREATE OR REPLACE FUNCTION function_hasnt_column ( NAME, NAME[], NAME )
+RETURNS TEXT AS $$
+    SELECT function_hasnt_column( $1, $2, $3, 'Function Column ' || quote_ident($1) || '(' || array_to_string($2, ',') || ').' || quote_ident($3) || ' should not exist' );
+$$ LANGUAGE SQL;
+
 -- _col_is_null( schema, table, column, desc, null )
 CREATE OR REPLACE FUNCTION _col_is_null ( NAME, NAME, NAME, TEXT, bool )
 RETURNS TEXT AS $$
