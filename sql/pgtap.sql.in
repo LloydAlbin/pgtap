@@ -1636,6 +1636,94 @@ RETURNS TEXT AS $$
     SELECT col_type_is( $1, $2, $3, 'Column ' || quote_ident($1) || '.' || quote_ident($2) || ' should be type ' || $3 );
 $$ LANGUAGE SQL;
 
+-- function_col_type_is( schema, function, args[], column, schema, type, description )
+CREATE OR REPLACE FUNCTION function_col_type_is ( NAME, NAME, NAME[], NAME, NAME, TEXT, TEXT )
+RETURNS TEXT AS $$
+DECLARE
+    have_type TEXT := _get_function_col_ns_type($1, $2, $3, $4);
+    want_type TEXT;
+BEGIN
+    IF have_type IS NULL THEN
+        RETURN fail( $7 ) || E'\n' || diag (
+            '   Column ' || COALESCE(quote_ident($1) || '.', '')
+            || quote_ident($2) || '(' || array_to_string($3, ',') || ').' || quote_ident($4) || ' does not exist'
+        );
+    END IF;
+
+    want_type := quote_ident($5) || '.' || _quote_ident_like($6, have_type);
+    IF have_type = want_type THEN
+        -- We're good to go.
+        RETURN ok( true, $7 );
+    END IF;
+
+    -- Wrong data type. tell 'em what we really got.
+    RETURN ok( false, $7 ) || E'\n' || diag(
+           '        have: ' || have_type ||
+        E'\n        want: ' || want_type
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- function_col_type_is( schema, function, args[], column, schema, type )
+CREATE OR REPLACE FUNCTION function_col_type_is ( NAME, NAME, NAME[], NAME, NAME, TEXT )
+RETURNS TEXT AS $$
+    SELECT function_col_type_is( $1, $2, $3, $4, $5, $6, 'Column ' || quote_ident($1) || '.' || quote_ident($2)
+        || '(' || array_to_string($3, ',') || ').' || quote_ident($4) || ' should be type ' || quote_ident($5) || '.' || $6);
+$$ LANGUAGE SQL;
+
+-- function_col_type_is( schema, function, args[], column, type, description )
+CREATE OR REPLACE FUNCTION function_col_type_is ( NAME, NAME, NAME[], NAME, TEXT, TEXT )
+RETURNS TEXT AS $$
+DECLARE
+    have_type TEXT;
+    want_type TEXT;
+BEGIN
+    -- Get the data type.
+    IF $1 IS NULL THEN
+        have_type := _get_function_col_ns_type($2, $3, $4);
+    ELSE
+        have_type := _get_function_col_ns_type($1, $2, $3, $4);
+    END IF;
+
+    IF have_type IS NULL THEN
+        RETURN fail( $6 ) || E'\n' || diag (
+            '   Column ' || COALESCE(quote_ident($1) || '.', '')
+            || quote_ident($2) || '(' || array_to_string($3, ',') || ').' || quote_ident($4) || ' does not exist'
+        );
+    END IF;
+
+    want_type := _quote_ident_like($5, have_type);
+    IF have_type = want_type THEN
+        -- We're good to go.
+        RETURN ok( true, $6 );
+    END IF;
+
+    -- Wrong data type. tell 'em what we really got.
+    RETURN ok( false, $6 ) || E'\n' || diag(
+           '        have: ' || have_type ||
+        E'\n        want: ' || want_type
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- function_col_type_is( schema, function, args[], column, type )
+CREATE OR REPLACE FUNCTION function_col_type_is ( NAME, NAME, NAME[], NAME, TEXT )
+RETURNS TEXT AS $$
+    SELECT function_col_type_is( $1, $2, $3, $4, $5, 'Column ' || quote_ident($1) || '.' || quote_ident($2) || '(' || array_to_string($3, ',') || ').' || quote_ident($4) || ' should be type ' || $5 );
+$$ LANGUAGE SQL;
+
+-- function_col_type_is( function, args[], column, type, description )
+CREATE OR REPLACE FUNCTION function_col_type_is ( NAME, NAME[], NAME, TEXT, TEXT )
+RETURNS TEXT AS $$
+    SELECT function_col_type_is( NULL, $1, $2, $3, $4, $5 );
+$$ LANGUAGE SQL;
+
+-- function_col_type_is( function, args[], column, type )
+CREATE OR REPLACE FUNCTION function_col_type_is ( NAME, NAME[], NAME, TEXT )
+RETURNS TEXT AS $$
+    SELECT function_col_type_is( $1, $2, $3, $4, 'Column ' || quote_ident($1) || '(' || array_to_string($2, ',') || ').' || quote_ident($3) || ' should be type ' || $3 );
+$$ LANGUAGE SQL;
+
 CREATE OR REPLACE FUNCTION _has_def ( NAME, NAME, NAME )
 RETURNS boolean AS $$
     SELECT a.atthasdef
