@@ -1514,6 +1514,17 @@ RETURNS TEXT AS $$
        AND NOT a.attisdropped
 $$ LANGUAGE SQL;
 
+-- _get_function_col_ns_type( schema, function, args[], column )
+CREATE OR REPLACE FUNCTION _get_function_col_ns_type ( NAME, NAME, NAME[], NAME )
+RETURNS NAME AS $$
+    -- Always include the namespace.
+    SELECT return_arg_types[array_position(return_arg_names, $4)]
+      FROM tap_funky n
+     WHERE schema = $1
+       AND "name" = $2
+       AND arg_types = $3
+$$ LANGUAGE SQL;
+
 CREATE OR REPLACE FUNCTION _quote_ident_like(TEXT, TEXT)
 RETURNS TEXT AS $$
 DECLARE
