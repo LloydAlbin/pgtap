@@ -1264,6 +1264,32 @@ RETURNS BOOLEAN AS $$
     );
 $$ LANGUAGE SQL;
 
+-- _fcexists( schema, function, args[], column )
+CREATE OR REPLACE FUNCTION _fcexists ( NAME, NAME, NAME[], NAME )
+RETURNS BOOLEAN AS $$
+    SELECT EXISTS(
+        SELECT true
+          FROM tap_funky
+         WHERE schema = $1
+           AND "name" = $2
+           AND arg_types = $3
+           AND return_arg_names @> ARRAY[$4]
+    );
+$$ LANGUAGE SQL;
+
+-- _fcexists( function, args[], column )
+CREATE OR REPLACE FUNCTION _fcexists ( NAME, NAME[], NAME )
+RETURNS BOOLEAN AS $$
+    SELECT EXISTS(
+        SELECT true
+          FROM tap_funky
+         WHERE "name" = $1
+           AND arg_types = $2
+           AND is_visible = true
+           AND return_arg_names @> ARRAY[$3]
+    );
+$$ LANGUAGE SQL;
+
 -- has_column( schema, table, column, description )
 CREATE OR REPLACE FUNCTION has_column ( NAME, NAME, NAME, TEXT )
 RETURNS TEXT AS $$
