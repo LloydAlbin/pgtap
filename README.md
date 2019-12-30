@@ -1,4 +1,4 @@
-pgTAP 1.1.0
+pgTAP 1.2.0
 ============
 
 [pgTAP](http://pgtap.org) is a unit testing framework for PostgreSQL written
@@ -10,7 +10,7 @@ documentation in `doc/pgtap.mmd` or
 [online](http://pgtap.org/documentation.html "Complete pgTAP Documentation").
 
 [![PGXN version](https://badge.fury.io/pg/pgtap.svg)](https://badge.fury.io/pg/pgtap)
-[![Build Status](https://travis-ci.org/theory/pgtap.png)](https://travis-ci.org/theory/pgtap)
+[![Build Status](https://travis-ci.orgLloydAlbin/pgtap.png)](https://travis-ci.org/LloydAlbin/pgtap)
 
 To build it, just do this:
 

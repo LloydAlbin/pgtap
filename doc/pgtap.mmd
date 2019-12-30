@@ -1,4 +1,4 @@
-pgTAP 1.1.0
+pgTAP 1.2.0
 ============
 
 pgTAP is a unit testing framework for PostgreSQL written in PL/pgSQL and
@@ -4198,6 +4198,64 @@ This function is the inverse of `has_column()`. The test passes if the
 specified column does *not* exist in the specified table, view, materialized
 view or composite type.
 
+### `function_has_column()` ###
+
+    SELECT function_has_column( :schema, :function, :args, :column, :description );
+    SELECT function_has_column( :schema, :function, :args, :column );
+    SELECT function_has_column( :function, :args, :column, :description );
+    SELECT function_has_column( :function, :args, :column );
+
+**Parameters**
+
+`:schema`
+: Schema in which to find the table.
+
+`:table`
+: Name of a table.
+
+`:args`
+: Array of data types for the function arguments.
+
+`:column`
+: Name of the column.
+
+`:description`
+: A short description of the test.
+
+Tests whether or not a return column exists in a given function. The first 
+argument is the schema name, the second the function name, the third argument is an array of argument tyoes, the fourth the 
+column name, and the fifth is the test description. If the schema is 
+omitted, the table must be visible in the search path. If the test 
+description is omitted, it will be set to "Column `:table.:column` should
+exist".
+
+### `function_hasnt_column()` ###
+
+    SELECT function_hasnt_column( :schema, :table, :args, :column, :description );
+    SELECT function_hasnt_column( :schema, :table, :args, :column );
+    SELECT function_hasnt_column( :table, :args, :column, :description );
+    SELECT function_hasnt_column( :table, :args, :column );
+
+**Parameters**
+
+`:schema`
+: Schema in which to find the table.
+
+`:table`
+: Name of a table.
+
+`:args`
+: Array of data types for the function arguments.
+
+`:column`
+: Name of the column.
+
+`:description`
+: A short description of the test.
+
+This function is the inverse of `function_has_column()`. The test passes if the
+specified return column does *not* exist in the specified function.
+
 ### `col_not_null()` ###
 
     SELECT col_not_null( :schema, :table, :column, :description );
@@ -5288,6 +5346,128 @@ wrong, for example:
 If the function does not exist, you'll be told that, too.
 
     # Failed test 284: "Function oui(integer, text) should return integer"
+    #     Function oui(integer, text) does not exist
+
+But then you check with `has_function()` first, right?
+
+### `function_returns_types()` ###
+
+    SELECT function_returns_types( :schema, :function, :args, :types, :description );
+    SELECT function_returns_types( :schema, :function, :args, :types );
+    SELECT function_returns_types( :schema, :function, :types, :description );
+    SELECT function_returns_types( :schema, :function, :types );
+    SELECT function_returns_types( :function, :args, :types, :description );
+    SELECT function_returns_types( :function, :args, :types );
+    SELECT function_returns_types( :function, :types, :description );
+    SELECT function_returns_types( :function, :types );
+
+**Parameters**
+
+`:schema`
+: Schema in which to find the function.
+
+`:function`
+: Function name.
+
+`:args`
+: Array of data types for the function arguments.
+
+`:types`
+: Array of data types being returned by the function.
+
+`:description`
+: A short description of the test.
+
+Tests that a particular function returns a particular data type. The `:args[]`
+and `:type` arguments should be formatted as they would be displayed in the
+view of a function using the `\df` command in `psql`. For example, use
+"character varying" rather than "varchar", and "boolean" rather than "bool".
+For set returning functions, the `:type` argument should start with "setof "
+(yes, lowercase). Examples:
+
+    SELECT function_returns_types( 'myschema', 'foo', ARRAY['integer', 'text'], ARRAY['integer'] );
+    SELECT function_returns_types( 'do_something', ARRAY['bool'] );
+    SELECT function_returns_types( 'do_something', ARRAY['integer'], ARRAY['boolean','text'] );
+    SELECT function_returns_types( 'do_something', ARRAY['numeric'], ARRAY['numeric'] );
+
+If the `:schema` argument is omitted, then the function must be visible in the
+search path. If the `:args[]` argument is passed, then the function with that
+argument signature will be the one tested; otherwise, a function with any
+signature will be checked (pass an empty array to specify a function with an
+empty signature). If the `:description` is omitted, a reasonable substitute
+will be created.
+
+In the event of a failure, you'll useful diagnostics will tell you what went
+wrong, for example:
+
+    # Failed test 283: "Function oww(integer, text) should return integer"
+    #         have: bool
+    #         want: integer
+
+If the function does not exist, you'll be told that, too.
+
+    # Failed test 284: "Function oui(integer, text) should return integer"
+    #     Function oui(integer, text) does not exist
+
+But then you check with `has_function()` first, right?
+
+### `function_returns_names()` ###
+
+    SELECT function_returns_names( :schema, :function, :args, :names, :description );
+    SELECT function_returns_names( :schema, :function, :args, :names );
+    SELECT function_returns_names( :schema, :function, :names, :description );
+    SELECT function_returns_names( :schema, :function, :names );
+    SELECT function_returns_names( :function, :args, :names, :description );
+    SELECT function_returns_names( :function, :args, :names );
+    SELECT function_returns_names( :function, :names, :description );
+    SELECT function_returns_names( :function, :names );
+
+**Parameters**
+
+`:schema`
+: Schema in which to find the function.
+
+`:function`
+: Function name.
+
+`:args`
+: Array of data types for the function arguments.
+
+`:names`
+: Array of field names being returned by the function.
+
+`:description`
+: A short description of the test.
+
+Tests that a particular function returns a particular data type. The `:args[]`
+and `:type` arguments should be formatted as they would be displayed in the
+view of a function using the `\df` command in `psql`. For example, use
+"character varying" rather than "varchar", and "boolean" rather than "bool".
+For set returning functions, the `:type` argument should start with "setof "
+(yes, lowercase). Examples:
+
+    SELECT function_returns_names( 'myschema', 'foo', ARRAY['integer', 'text'], ARRAY['some_integer'] );
+    SELECT function_returns_names( 'do_something', ARRAY['some_bool'] );
+    SELECT function_returns_names( 'do_something', ARRAY['integer'], ARRAY['some_boolean','some_text'] );
+    SELECT function_returns_names( 'do_something', ARRAY['numeric'], ARRAY['some_numeric'] );
+
+If the `:schema` argument is omitted, then the function must be visible in the
+search path. If the `:args[]` argument is passed, then the function with that
+argument signature will be the one tested; otherwise, a function with any
+signature will be checked (pass an empty array to specify a function with an
+empty signature). If the `:description` is omitted, a reasonable substitute
+will be created.
+
+In the event of a failure, you'll useful diagnostics will tell you what went
+wrong, for example:
+
+    # Failed test 283: "Function oww(integer, text) should return some_integer"
+    #         have: some_bool
+    #         want: some_integer
+
+If the function does not exist, you'll be told that, too.
+
+    # Failed test 284: "Function oui(integer, text) should return some_integer"
     #     Function oui(integer, text) does not exist
 
 But then you check with `has_function()` first, right?
