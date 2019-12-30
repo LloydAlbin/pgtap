@@ -5663,7 +5663,7 @@ $$ LANGUAGE SQL;
 -- function_returns_types( function, args[], types[], description )
 CREATE OR REPLACE FUNCTION function_returns_types( NAME, NAME[], NAME[], TEXT )
 RETURNS TEXT AS $$
-    SELECT _func_compare(NULL, $1, $2, _returns($1, $2), $3, $4 );
+    SELECT _func_compare(NULL, $1, $2, _returns_types($1, $2), $3, $4 );
 $$ LANGUAGE SQL;
 
 -- function_returns_types( function, args[], types[] )
